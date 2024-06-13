@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Branches</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            margin-top: 50px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+        .status-icon {
+            display: none;
+            margin-left: 10px;
+        }
+        .status-icon.success {
+            color: green;
+        }
+        .status-icon.error {
+            color: red;
+        }
+        .input-updated {
+            background-color: #d4edda;
+            transition: background-color 2s ease-out;
+        }
+        .input-error {
+            background-color: #f8d7da;
+            transition: background-color 2s ease-out;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        function updateAvailability(categoryId) {
+            var availabilityInput = document.getElementById('availability-' + categoryId);
+            var availability = availabilityInput.value;
+            var successIcon = document.getElementById('success-icon-' + categoryId);
+            var errorIcon = document.getElementById('error-icon-' + categoryId);
+
+            $.ajax({
+                url: '{% url "update_seat_availability" %}',
+                type: 'POST',
+                data: {
+                    'category_id': categoryId,
+                    'availability': availability,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status == 'success') {
+                        successIcon.style.display = 'inline';
+                        errorIcon.style.display = 'none';
+                        availabilityInput.classList.add('input-updated');
+                        setTimeout(function() {
+                            successIcon.style.display = 'none';
+                            availabilityInput.classList.remove('input-updated');
+                        }, 300);
+                    } else {
+                        successIcon.style.display = 'none';
+                        errorIcon.style.display = 'inline';
+                        availabilityInput.classList.add('input-error');
+                        setTimeout(function() {
+                            errorIcon.style.display = 'none';
+                            availabilityInput.classList.remove('input-error');
+                        }, 1000);
+                    }
+                },
+                error: function(response) {
+                    successIcon.style.display = 'none';
+                    errorIcon.style.display = 'inline';
+                    availabilityInput.classList.add('input-error');
+                    setTimeout(function() {
+                        errorIcon.style.display = 'none';
+                        availabilityInput.classList.remove('input-error');
+                    }, 1500);
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Edit Branches</h1>
+        <div class="accordion" id="branchesAccordion">
+            {% for branch in branches %}
+                <div class="card">
+                    <div class="card-header" id="heading{{ forloop.counter }}">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+                                {{ branch.branch_name }}
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapse{{ forloop.counter }}" class="collapse" aria-labelledby="heading{{ forloop.counter }}" data-parent="#branchesAccordion">
+                        <div class="card-body">
+                            <ul class="list-group">
+                                {% for category in branch.categories %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ category.name }}
+                                        <div>
+                                            <input type="number" id="availability-{{ category.id }}" value="{{ category.availability }}" class="form-control d-inline-block" style="width: 80px;">
+                                            <button class="btn btn-primary btn-sm" onclick="updateAvailability({{ category.id }})">Update</button>
+                                            <span id="success-icon-{{ category.id }}" class="status-icon success">&#10004;</span>
+                                            <span id="error-icon-{{ category.id }}" class="status-icon error">&#10060;</span>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
