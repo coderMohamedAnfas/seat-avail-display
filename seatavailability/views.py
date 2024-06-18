@@ -1,43 +1,41 @@
-# seatavailability/views.py
-from django.http import JsonResponse
-# from .models import SeatAvailability
 from django.shortcuts import render
-
-# seatavailability/views.py
 from django.http import JsonResponse
-from .models import Branch,Category
+from .models import College, Branch, Category
 
 def seat_availability_view(request):
-    branches = Branch.objects.all().prefetch_related('categories')
+    colleges = College.objects.all().prefetch_related('branches__categories')
     data = {}
 
-    for branch in branches:
-        categories = branch.categories.all().values('name', 'availability')
-        data[branch.name] = list(categories)
+    for college in colleges:
+        college_data = {}
+        for branch in college.branches.all():
+            categories = branch.categories.all().values('name', 'availability')
+            college_data[branch.name] = list(categories)
+        data[college.name] = college_data
 
     return JsonResponse(data)
 
-
 def index_view(request):
     return render(request, 'index.html')
-# views.py
-
-from django.shortcuts import render
-from django.http import JsonResponse
-from .models import Branch, Category
 
 def edit(request):
-    branches = Branch.objects.all().prefetch_related('categories')
-    branch_data = []
+    colleges = College.objects.all().prefetch_related('branches__categories')
+    college_data = []
 
-    for branch in branches:
-        categories = branch.categories.all()
-        branch_data.append({
-            'branch_name': branch.name,
-            'categories': categories
+    for college in colleges:
+        branches_data = []
+        for branch in college.branches.all():
+            categories = branch.categories.all()
+            branches_data.append({
+                'branch_name': branch.name,
+                'categories': categories
+            })
+        college_data.append({
+            'college_name': college.name,
+            'branches': branches_data
         })
 
-    return render(request, "edit.html", {'branches': branch_data})
+    return render(request, "edit.html", {'colleges': college_data})
 
 def update_seat_availability(request):
     if request.method == 'POST':
